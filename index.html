@@ -1,9 +1,11 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>NEET 2027 Catch-Up Planner</title>
+<!-- PWA & Mobile Configuration -->
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#166534">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,7 +17,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#f3f4f6}
 #app{max-width:460px;margin:0 auto;background:#fff;min-height:100vh}
 button,input,textarea{font-family:inherit}
 .tb{display:flex;border-bottom:2px solid #f3f4f6;background:#fff;position:sticky;top:0;z-index:50}
-.tb button{flex:1;padding:11px 2px;font-size:11px;font-weight:700;border:none;background:none;cursor:pointer;color:#9ca3af;margin-bottom:-2px;border-bottom:2.5px solid transparent}
+.tb button{flex:1;padding:9px 1px;font-size:9.5px;font-weight:700;border:none;background:none;cursor:pointer;color:#9ca3af;margin-bottom:-2px;border-bottom:2.5px solid transparent}
 .tb button.on{color:#166534;border-bottom-color:#166534}
 .ct{padding:16px 14px}
 </style>
@@ -37,15 +39,18 @@ const CHT={Ph:14,PC:3,In:2,Or:5,Bo:7,Zo:6};
 const AS=["Ph","PC","In","Or","Bo","Zo"];
 const WS={1:["PC","PC","Ph"],2:["PC","PC","Ph"],3:["PC","Ph","Zo"],4:["Ph","Zo","Bo"],5:["Zo","Zo","Bo"],6:["PC","Ph","Bo"],0:[]};
 const PS=new Date(2026,5,15,0,0,0);
+const WB={1:["PC","PC","Ph"],2:["PC","PC","Ph"],3:["Ph","Ph","PC"],4:["Ph","Ph","Zo"],5:["PC","Zo","Bo"],6:["PC","Zo","Bo"],0:[]};
+const CATCH_RATE={Ph:5,PC:6,Zo:4,Bo:3};
+const INIT_BL={Ph:26,PC:28,Zo:18,Bo:13};
 const SP={"2026-06-21":{type:"test",label:"Rank Booster Test-1",sub:"Full length test — prepare thoroughly"}};
 const DS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const MO=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-const ST={tab:0,cs:"Ph",modal:null,mn:"",ex:null,cn:{},ti:{},D:{sched:{},currCh:{Ph:0,PC:0,In:0,Or:0,Bo:0,Zo:0},chData:{},sn:{}}};
+const ST={tab:0,cs:"Ph",modal:null,mn:"",ex:null,cn:{},ti:{},D:{sched:{},currCh:{Ph:0,PC:0,In:0,Or:0,Bo:0,Zo:0},chData:{},sn:{},lbl:{Ph:26,PC:28,Zo:18,Bo:13},nlw:{Ph:2,PC:2,Zo:1,Bo:1},schedB:{},snB:{}}};
 
 async function sv(){const j=JSON.stringify(ST.D);try{if(window.storage)await window.storage.set("nv4",j);}catch(e){}try{localStorage.setItem("nv4",j);}catch(e){}}
 async function ld(){try{if(window.storage){const r=await window.storage.get("nv4");if(r&&r.value){mp(JSON.parse(r.value));return;}}}catch(e){}try{const v=localStorage.getItem("nv4");if(v)mp(JSON.parse(v));}catch(e){}}
-function mp(p){ST.D={sched:{},currCh:{Ph:0,PC:0,In:0,Or:0,Bo:0,Zo:0},chData:{},sn:{},...p,currCh:{Ph:0,PC:0,In:0,Or:0,Bo:0,Zo:0,...(p.currCh||{})},sn:p.sn||p.slotNotes||{}};}
+function mp(p){ST.D={sched:{},currCh:{Ph:0,PC:0,In:0,Or:0,Bo:0,Zo:0},chData:{},sn:{},lbl:{Ph:26,PC:28,Zo:18,Bo:13},nlw:{Ph:2,PC:2,Zo:1,Bo:1},schedB:{},snB:{},...p,currCh:{Ph:0,PC:0,In:0,Or:0,Bo:0,Zo:0,...(p.currCh||{})},sn:p.sn||p.slotNotes||{},schedB:p.schedB||{},snB:p.snB||{}};}
 
 function es(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function dk(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
@@ -79,7 +84,7 @@ function rHdr(){
 }
 
 function rTbs(){
-  return`<div class="tb">${["Schedule","Chapters","Progress","Daily"].map((t,i)=>`<button class="${ST.tab===i?"on":""}" onclick="setTab(${i})">${t}</button>`).join("")}</div>`;
+  return`<div class="tb">${["Schedule","Plan B","Chapters","Progress","Daily"].map((t,i)=>`<button class="${ST.tab===i?"on":""}" onclick="setTab(${i})">${t}</button>`).join("")}</div>`;
 }
 
 function rSch(){
@@ -156,9 +161,32 @@ function rCh(){
   return h;
 }
 
+function gstB(dk,i){return((ST.D.schedB||{})[dk]||[])[i]||"pending";}
+function gsnB(dk,i){return(ST.D.snB||{})[dk+"-"+i]||"";}
+function fmtD(d){return MO[d.getMonth()]+" "+d.getDate()+", "+d.getFullYear();}
+
 function rPr(){
   let h=AS.map(s=>{const c=(ST.D.currCh||{})[s]||0,t=CHT[s],p=Math.round(c/t*100),st=SS[s],cn=(ALL_CH[s]||[])[c]||"All Done";return`<div style="background:${st.bg};border:1px solid ${st.bd};border-radius:12px;padding:11px 13px;margin-bottom:9px"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px"><div><span style="background:${st.ac};color:#fff;font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px">${st.lbl}</span><p style="margin:5px 0 0;font-size:11px;color:${st.tx}">Current: <b>${es(cn)}</b></p></div><div style="text-align:right"><div style="font-size:13px;font-weight:700;color:#111">${c}/${t}</div><div style="font-size:10px;color:#9ca3af">${t-c} left</div></div></div><div style="height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden"><div style="width:${p}%;height:100%;background:${st.ac};border-radius:4px"></div></div><p style="margin:4px 0 0;font-size:10px;color:${st.tx}">${p}% complete</p></div>`;}).join("");
   h+=`<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px;margin-top:4px"><p style="margin:0 0 6px;font-size:12px;font-weight:700;color:#14532d">How to update progress</p><p style="margin:0;font-size:12px;color:#166534;line-height:1.6">Go to the Chapters tab, select a subject, expand any chapter, and tap "Set as Current Chapter". Chapters before it automatically show as done.</p></div>`;
+
+  // Lecture backlog timeline
+  h+=`<div style="margin-top:20px"><p style="margin:0 0 4px;font-size:10px;font-weight:800;color:#9ca3af;letter-spacing:1.2px;text-transform:uppercase">Lecture Backlog & Catch-Up Timeline</p><p style="margin:0 0 12px;font-size:11px;color:#6b7280">Update your remaining lecture count as you progress. Adjust the new lectures/week to match live class pace.</p>`;
+  const BL_SUBJ=["Ph","PC","Zo","Bo"];
+  const BL_VER={Ph:"Physics (MR Sir)",PC:"Phy Chem (Sudhanshu Sir)",Zo:"Zoology (Samapti Mam)",Bo:"Botany (Vipin Sir)"};
+  BL_SUBJ.forEach(s=>{
+    const st=SS[s];
+    const bl=(ST.D.lbl||INIT_BL)[s]??INIT_BL[s];
+    const nlw=(ST.D.nlw||{})[s]??2;
+    const cr=CATCH_RATE[s];
+    const res=calcCatchUp(s);
+    const net=cr-nlw;
+    let dateHtml="";
+    if(bl<=0){dateHtml=`<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 10px;text-align:center;font-size:12px;font-weight:700;color:#15803d">Caught up!</div>`;}
+    else if(net<=0){dateHtml=`<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 10px"><p style="margin:0;font-size:11px;font-weight:700;color:#dc2626">Won't catch up at current pace</p><p style="margin:2px 0 0;font-size:10px;color:#9ca3af">New lectures (${nlw}/wk) ≥ catch-up slots (${cr}/wk). Increase daily slots or reduce new estimate.</p></div>`;}
+    else{const pct=Math.min(100,Math.round((1-(bl/(INIT_BL[s]||bl+1)))*100));dateHtml=`<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:9px 11px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div><p style="margin:0;font-size:10px;color:#9ca3af">Net progress</p><p style="margin:2px 0 0;font-size:13px;font-weight:800;color:#111">${net} lectures/week</p></div><div style="text-align:right"><p style="margin:0;font-size:10px;color:#9ca3af">Clears by</p><p style="margin:2px 0 0;font-size:13px;font-weight:800;color:${st.tx}">${fmtD(res.date)}</p></div></div><div style="height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${st.ac};border-radius:3px"></div></div><p style="margin:4px 0 0;font-size:10px;color:#9ca3af">${res.weeks} week${res.weeks>1?"s":""} remaining &middot; ${cr-nlw} net reduction/week</p></div>`;}
+    h+=`<div style="background:${st.bg};border:1px solid ${st.bd};border-radius:12px;padding:12px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><span style="background:${st.ac};color:#fff;font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px">${st.lbl}</span><p style="margin:4px 0 0;font-size:11px;color:${st.tx}">${BL_VER[s]}</p></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:9px 11px"><p style="margin:0 0 3px;font-size:10px;color:#9ca3af">Lectures remaining</p><div style="display:flex;align-items:center;gap:6px"><input type="number" min="0" value="${bl}" onchange="updBL('${s}',this.value)" style="width:56px;padding:4px 6px;border:1.5px solid ${st.bd};border-radius:6px;font-size:14px;font-weight:700;color:#111;font-family:inherit;outline:none;background:#fff"><span style="font-size:11px;color:#9ca3af">of ${INIT_BL[s]} total</span></div></div><div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:9px 11px"><p style="margin:0 0 3px;font-size:10px;color:#9ca3af">New lectures/week</p><div style="display:flex;align-items:center;gap:6px"><input type="number" min="0" value="${nlw}" onchange="updNLW('${s}',this.value)" style="width:44px;padding:4px 6px;border:1.5px solid ${st.bd};border-radius:6px;font-size:14px;font-weight:700;color:#111;font-family:inherit;outline:none;background:#fff"><span style="font-size:11px;color:#9ca3af">live adds</span></div></div></div>${dateHtml}</div>`;
+  });
+  h+=`<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:11px;font-size:11px;color:#92400e;line-height:1.7">Update "Lectures remaining" each week as you finish lectures. Update "New lectures/week" based on how many the live class uploads per week. The date adjusts automatically.</div></div>`;
   return h;
 }
 
@@ -178,28 +206,87 @@ function rDl(){
 
 function rMdl(){
   if(!ST.modal)return "";
-  const {dk:d,idx,subj}=ST.modal,st=SS[subj],cs=gst(d,idx);
+  const {dk:d,idx,subj,isPB}=ST.modal,st=SS[subj],cs=isPB?gstB(d,idx):gst(d,idx);
   const opts=[{s:"done",ic:IC.ck,l:"Mark as Done",sb:"Watched and completed"},{s:"missed",ic:IC.cr,l:"Mark as Missed",sb:"Did not watch on this day"},{s:"pending",ic:IC.pd,l:"Mark as Pending",sb:"Not yet watched"}];
   const oh=opts.map(o=>{const sc=SC[o.s],iC=cs===o.s;return`<div onclick="sSt('${es(d)}',${idx},'${o.s}')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;margin-bottom:7px;border:1.5px solid ${iC?sc.bd:"#e5e7eb"};background:${iC?sc.bg:"#fff"};cursor:pointer">${o.ic}<div style="flex:1"><p style="margin:0;font-size:13px;font-weight:${iC?700:500};color:${iC?sc.tx:"#374151"}">${o.l}</p><p style="margin:2px 0 0;font-size:11px;color:#9ca3af">${o.sb}</p></div>${iC?IC.tk(sc.tx):""}</div>`;}).join("");
   return`<div onclick="cMdl()" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:flex-end"><div onclick="event.stopPropagation()" style="background:#fff;width:100%;max-width:460px;margin:0 auto;border-radius:20px 20px 0 0;padding:16px 16px 40px"><div style="width:40px;height:5px;background:#e5e7eb;border-radius:3px;margin:0 auto 18px"></div><p style="margin:0 0 8px;font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px">Update Lecture Status</p><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="font-size:11px;font-weight:700;padding:3px 11px;background:${st.ac};color:#fff;border-radius:20px">${st.lbl}</span><span style="font-size:12px;font-weight:600;color:#374151">Slot ${idx+1}</span></div><p style="margin:0 0 14px;font-size:12px;color:#6b7280">${es(gcn(subj))}</p>${oh}<p style="margin:14px 0 6px;font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.8px">Quick Note</p><textarea id="mn" oninput="ST.mn=this.value" placeholder="Add a note for this lecture slot..." style="width:100%;min-height:60px;padding:9px;border:1px solid #e5e7eb;border-radius:8px;font-size:12px;line-height:1.5;resize:vertical;font-family:inherit;outline:none;box-sizing:border-box"></textarea><button onclick="sAC()" style="width:100%;margin-top:10px;padding:11px;background:#166534;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">Save</button></div></div>`;
 }
 
+function rPB(){
+  const now=new Date();now.setHours(0,0,0,0);
+  const pre=now<PS;
+  const fr=new Date(pre?PS.getTime():now.getTime());
+  const days=Array.from({length:7},(_,i)=>{const d=new Date(fr.getTime());d.setDate(fr.getDate()+i);return d;});
+  const tk=dk(now);
+  let h=`<div style="background:linear-gradient(135deg,#1e3a5f,#1e40af);color:#fff;border-radius:14px;padding:14px;margin-bottom:14px"><p style="margin:0 0 4px;font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:.8px">Plan B — 70% PCM / 30% Bio</p><p style="margin:0 0 10px;font-size:14px;font-weight:800">Faster Chemistry & Physics catch-up</p><div style="display:flex;gap:5px">${[["PC",7],["Ph",6],["Zo",3],["Bo",2]].map(([s,n])=>`<div style="flex:1;background:rgba(255,255,255,.15);border-radius:8px;padding:6px 2px;text-align:center"><div style="font-size:14px;font-weight:800">${n}</div><div style="font-size:8px;opacity:.8">${s}/wk</div></div>`).join("")}</div></div>`;
+  const PBR=[{d:"MON",sl:["PC","PC","Ph"]},{d:"TUE",sl:["PC","PC","Ph"]},{d:"WED",sl:["Ph","Ph","PC"]},{d:"THU",sl:["Ph","Ph","Zo"]},{d:"FRI",sl:["PC","Zo","Bo"]},{d:"SAT",sl:["PC","Zo","Bo"]},{d:"SUN",sl:null}];
+  h+=`<div style="margin-bottom:14px"><p style="margin:0 0 8px;font-size:10px;font-weight:800;color:#9ca3af;letter-spacing:1.2px;text-transform:uppercase">Weekly Pattern</p><div style="display:grid;gap:5px">`;
+  PBR.forEach(r=>{
+    h+=`<div style="display:flex;align-items:center;gap:5px"><span style="font-size:10px;font-weight:700;color:#374151;width:28px;flex-shrink:0">${r.d}</span>`;
+    if(r.sl){h+=r.sl.map(s=>`<div style="flex:1;background:${SS[s].ac};color:#fff;padding:5px 2px;border-radius:6px;text-align:center;font-size:9px;font-weight:700">${SS[s].lbl}</div>`).join("");}
+    else{h+=`<div style="flex:1;background:#f3f4f6;border-radius:6px;padding:5px;text-align:center;font-size:9px;color:#9ca3af">Rest / Revision</div>`;}
+    h+=`</div>`;
+  });
+  h+=`</div></div>`;
+  h+=`<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:10px 12px;margin-bottom:14px"><p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#92400e">Catch-Up Dates (Plan B)</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">${[["PC","~Aug 3","was Aug 24"],["Ph","~Aug 17","was Sep 14"],["Zo","~Oct 12","Bio slower"],["Bo","⚠ Watch","if PW adds 2+/wk"]].map(([s,date,note])=>`<div style="background:#fff;border:1px solid #fde68a;border-radius:7px;padding:7px 8px"><span style="font-size:9px;font-weight:700;padding:1px 6px;background:${SS[s].ac};color:#fff;border-radius:20px">${SS[s].lbl}</span><p style="margin:3px 0 0;font-size:12px;font-weight:800;color:#111">${date}</p><p style="margin:1px 0 0;font-size:9px;color:#9ca3af">${note}</p></div>`).join("")}</div></div>`;
+  if(pre){const df=Math.ceil((PS.getTime()-now.getTime())/864e5);h+=`<div style="display:flex;align-items:center;gap:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:11px 14px;margin-bottom:14px">${IC.cl}<div><p style="margin:0;font-size:12px;font-weight:700;color:#1e40af">Schedule starts Monday, 15 June 2026</p><p style="margin:2px 0 0;font-size:11px;color:#3b82f6">${df} day(s) away</p></div></div>`;}
+  days.forEach((day,di)=>{
+    const d=dk(day),jd=day.getDay();
+    const sp=SP[d];
+    const sl=(sp&&sp.type==="test")?[]:WB[jd];
+    const sun=jd===0,isT=d===tk&&!pre,isp=day<now&&!isT;
+    const sts=sl.map((_,i)=>gstB(d,i));
+    const aD=sl.length>0&&sts.every(s=>s==="done");
+    const aM=sts.some(s=>s==="missed");
+    const aP=sl.length>0&&sts.every(s=>s==="pending");
+    let sl2="";
+    if(!pre&&di===0)sl2="TODAY";
+    else if((!pre&&di===1)||(pre&&di===0))sl2="UPCOMING";
+    const bc=isT?"#166534":aD?"#bbf7d0":aM?"#fecaca":"#e5e7eb";
+    const hb=isT?"#f0fdf4":aD?"#f0fdf4":aM?"#fef2f2":"#f9fafb";
+    if(sl2)h+=`<p style="margin:${di===0?"0 0 9px":"16px 0 9px"};font-size:10px;font-weight:800;color:#9ca3af;letter-spacing:1.2px;text-transform:uppercase">${sl2}</p>`;
+    h+=`<div style="border:1.5px solid ${bc};border-radius:14px;overflow:hidden;margin-bottom:10px;opacity:${isp&&aP?.72:1}">`;
+    h+=`<div style="padding:10px 14px;background:${hb};display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid ${bc}"><div style="display:flex;align-items:center;gap:7px"><span style="font-size:14px;font-weight:800;color:#111">${DS[jd]}, ${day.getDate()} ${MO[day.getMonth()]}</span>${isT?'<span style="font-size:9px;font-weight:800;letter-spacing:.5px;background:#166534;color:#fff;padding:2px 9px;border-radius:20px">TODAY</span>':""}${isp&&!aD?'<span style="font-size:9px;font-weight:700;background:#fee2e2;color:#dc2626;padding:2px 7px;border-radius:20px">OVERDUE</span>':""}</div>${aD?IC.ck:aM?IC.cr:""}</div>`;
+    h+=`<div style="padding:10px 13px">`;
+    if(sp&&sp.type==="test"){h+=`<div style="display:flex;align-items:center;gap:11px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:11px 13px">${IC.ts}<div><p style="margin:0;font-size:13px;font-weight:700;color:#92400e">${es(sp.label)}</p><p style="margin:2px 0 0;font-size:11px;color:#a16207">${es(sp.sub)}</p></div></div>`;}
+    else if(sun){h+=`<div style="display:flex;align-items:center;gap:11px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:11px 13px">${IC.bk}<div><p style="margin:0;font-size:13px;font-weight:600;color:#475569">Rest and Revision Day</p><p style="margin:2px 0 0;font-size:11px;color:#94a3b8">Vectors · Integration · Differentiation · Class 11 Revision</p></div></div>`;}
+    else{sl.forEach((subj,idx)=>{const st=SS[subj],status=gstB(d,idx),sc=SC[status],hn=!!gsnB(d,idx);const si=status==="done"?IC.ck:status==="missed"?IC.cr:IC.pd;h+=`<div onclick="oMdl('${es(d)}',${idx},'${subj}',1)" style="display:flex;align-items:center;gap:10px;background:${sc.bg};border:1.5px solid ${sc.bd};border-radius:10px;padding:10px 12px;margin-bottom:${idx<sl.length-1?7:0}px;cursor:pointer;user-select:none"><div style="flex-shrink:0">${si}</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><span style="font-size:10px;font-weight:700;padding:2px 9px;background:${st.ac};color:#fff;border-radius:20px">${st.lbl}</span><span style="font-size:10px;color:#9ca3af">Slot ${idx+1}</span>${hn?IC.nt:""}</div><p style="margin:0;font-size:12px;color:#374151;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${es(gcn(subj))}</p></div><span style="font-size:10px;font-weight:600;color:${sc.tx};flex-shrink:0">${sc.label}</span></div>`;});}
+    h+=`</div></div>`;
+  });
+  return h;
+}
+
 function render(){
-  const fn=[rSch,rCh,rPr,rDl];
+  const fn=[rSch,rPB,rCh,rPr,rDl];
   document.getElementById("app").innerHTML=rHdr()+rTbs()+`<div class="ct">${(fn[ST.tab]||rSch)()}</div>`+rMdl();
-  document.querySelectorAll("[data-nk]").forEach(el=>{const k=el.dataset.nk;el.value=ST.cn[k]!==undefined?ST.cn[k]:(gcd(k).note||"");});
+  document.querySelectorAll("[data-nk]").forEach(el=>{const k=el.dataset.nk;el.value=ST.cn[k] !== undefined?ST.cn[k]:(gcd(k).note||"");});
   document.querySelectorAll("[data-tk]").forEach(el=>{el.value=ST.ti[el.dataset.tk]||"";});
   const mn=document.getElementById("mn");if(mn)mn.value=ST.mn;
 }
 
 function setTab(i){ST.tab=i;render();}
 function sCS(s){ST.cs=s;ST.ex=null;render();}
-function oMdl(d,i,s){ST.modal={dk:d,idx:i,subj:s};ST.mn=gsn(d,i);render();}
+function oMdl(d,i,s,pb){ST.modal={dk:d,idx:i,subj:s,isPB:pb||0};ST.mn=pb?gsnB(d,i):gsn(d,i);render();}
 function cMdl(){ST.modal=null;render();}
-function sSt(d,i,s){if(!ST.D.sched[d])ST.D.sched[d]=["pending","pending","pending"];ST.D.sched[d][i]=s;sv();render();}
-function sAC(){const{dk:d,idx:i}=ST.modal;if(!ST.D.sn)ST.D.sn={};ST.D.sn[d+"-"+i]=ST.mn;ST.modal=null;sv();render();}
+function sSt(d,i,s){if(ST.modal&&ST.modal.isPB){if(!ST.D.schedB)ST.D.schedB={};if(!ST.D.schedB[d])ST.D.schedB[d]=["pending","pending","pending"];ST.D.schedB[d][i]=s;}else{if(!ST.D.sched[d])ST.D.sched[d]=["pending","pending","pending"];ST.D.sched[d][i]=s;}sv();render();}
+function sAC(){if(!ST.modal)return;const{dk:d,idx:i,isPB}=ST.modal;if(isPB){if(!ST.D.snB)ST.D.snB={};ST.D.snB[d+"-"+i]=ST.mn;}else{if(!ST.D.sn)ST.D.sn={};ST.D.sn[d+"-"+i]=ST.mn;}ST.modal=null;sv();render();}
 function tCh(k){ST.ex=ST.ex===k?null:k;if(ST.ex&&ST.cn[k]===undefined)ST.cn[k]=gcd(k).note||"";render();}
 function sCrCh(s,i){if(!ST.D.currCh)ST.D.currCh={};ST.D.currCh[s]=i;sv();render();}
+function updBL(s,v){if(!ST.D.lbl)ST.D.lbl={...INIT_BL};ST.D.lbl[s]=Math.max(0,parseInt(v)||0);sv();render();}
+function updNLW(s,v){if(!ST.D.nlw)ST.D.nlw={Ph:2,PC:2,Zo:1,Bo:1};ST.D.nlw[s]=Math.max(0,parseInt(v)||0);sv();render();}
+function calcCatchUp(s){
+  const bl=(ST.D.lbl||INIT_BL)[s]||0;
+  const cr=CATCH_RATE[s]||3;
+  const nr=(ST.D.nlw||{})[s]||0;
+  const net=cr-nr;
+  if(bl<=0)return{done:true};
+  if(net<=0)return{done:false,net:net};
+  const weeks=Math.ceil(bl/net);
+  const now=new Date();now.setHours(0,0,0,0);
+  const start=now<PS?new Date(PS.getTime()):now;
+  const d=new Date(start.getTime());d.setDate(d.getDate()+weeks*7);
+  return{done:false,net:net,weeks:weeks,date:d,bl:bl};
+}
 function oNI(k,v){ST.cn[k]=v;if(!ST.D.chData)ST.D.chData={};if(!ST.D.chData[k])ST.D.chData[k]={note:"",todos:[]};ST.D.chData[k].note=v;}
 function sChN(k){sv();}
 function oTI(k,v){ST.ti[k]=v;}
@@ -210,13 +297,16 @@ function dlTd(k,id){const td=(ST.D.chData||{})[k];if(!td)return;td.todos=td.todo
 
 (async function(){await ld();render();})();
 
+// PWA Service Worker Registration
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('Service Worker active.'))
-      .catch(err => console.error('SW registration failed:', err));
+      .then(reg => console.log('Service Worker successfully registered.'))
+      .catch(err => console.error('Service Worker registration failed:', err));
   });
 }
 </script>
 </body>
 </html>
+
+```
